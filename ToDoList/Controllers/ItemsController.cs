@@ -1,48 +1,70 @@
 using Microsoft.AspNetCore.Mvc;
 using ToDoList.Models;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+
 namespace ToDoList.Controllers
 {
   public class ItemsController : Controller
   {
+    private readonly ToDoListContext _db;
 
-    [HttpGet("/categories/{categoryId}/items/{itemId}")]
-    public ActionResult Show(int categoryId, int itemId)
+    public ItemsController(ToDoListContext db)
     {
-      Item item = Item.Find(itemId);
-      Category category = Category.Find(categoryId);
-      Dictionary<string, object> model = new Dictionary<string, object>();
-      model.Add("item", item);
-      model.Add("category", category);
+      _db = db;
+    }
+
+    public ActionResult Index()
+    {
+      List<Item> model = _db.Items.ToList();
       return View(model);
     }
 
-    [HttpGet("/items")]
-    public ActionResult Index()
-    {
-      List<Item> allItems = Item.GetAll();
-      return View(allItems);
-    }
+    public ActionResult Create()
+{
+    return View();
+}
 
-    [HttpGet("/categories/{categoryId}/items/new")]
-    public ActionResult New(int categoryId)
-    {
-      Category category = Category.Find(categoryId);
-      return View(category);
-    }
+[HttpPost]
+public ActionResult Create(Item item)
+{
+    _db.Items.Add(item);
+    _db.SaveChanges();
+    return RedirectToAction("Index");
+}
 
-    
-    [HttpPost("/items/delete")]
-    public ActionResult DeleteAll()
-    {
-      Item.ClearAll();
-      return View();
-    }
-    [HttpGet("/items/{id}")]
-    public ActionResult Show(int id)
-    {
-      Item foundItem = Item.Find(id);
-      return View(foundItem);
-    }
+public ActionResult Edit(int id)
+{
+    var thisItem = _db.Items.FirstOrDefault(item => item.ItemId == id);
+    return View(thisItem);
+}
+
+[HttpPost]
+public ActionResult Edit(Item item)
+{
+    _db.Entry(item).State = EntityState.Modified;
+    _db.SaveChanges();
+    return RedirectToAction("Index");
+}
+public ActionResult Details(int id)
+{
+    Item thisItem = _db.Items.FirstOrDefault(item => item.ItemId == id);
+    return View(thisItem);
+}
+public ActionResult Delete(int id)
+{
+    var thisItem = _db.Items.FirstOrDefault(item => item.ItemId == id);
+    return View(thisItem);
+}
+
+[HttpPost, ActionName("Delete")]
+public ActionResult DeleteConfirmed(int id)
+{
+    var thisItem = _db.Items.FirstOrDefault(item => item.ItemId == id);
+    _db.Items.Remove(thisItem);
+    _db.SaveChanges();
+    return RedirectToAction("Index");
+}
   }
 }
